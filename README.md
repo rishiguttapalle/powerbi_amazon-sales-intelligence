@@ -16,7 +16,7 @@ To design an interactive and impactful dashboard using Amazon product sales and 
 
 # Dataset
 
-**File:** `amazon_sales.xlsx`  
+**File:** `amazon_sales.xlsx`  \\
 **Source:** https://www.kaggle.com/datasets/karkavelrajaj/amazon-sales-dataset
 
 It includes:
@@ -48,16 +48,16 @@ It includes:
 - Generally, create relationships if needed (in this case, one table was sufficient)
   
 ### Calculated columns created
-discount = [actual_price] - [discounted_price]
+discount = [actual_price] - [discounted_price] \\
 discountpercent = (([actual_price] - [discounted_price]) / [actual_price]) * 100
 
 ### DAX Measures Created
-Total Revenue  = SUM(amazon_sales[discounted_price])                      
-Total Discount Given  = SUM(amazon_sales[discount])            
-Average Discount%  = AVERAGE(amazon_sales[discountpercent])         
-Average Rating = AVERAGE(amazon_sales[rating])                          
-Total Reviews = SUM(amazon_sales[rating_count])
-Top Product by Sales = RANKX(ALL(amazon_sales[product_name]), [Total Revenue], , DESC)
+Total Revenue  = SUM(amazon_sales[discounted_price])      \\                
+Total Discount Given  = SUM(amazon_sales[discount])        \\    
+Average Discount%  = AVERAGE(amazon_sales[discountpercent])  \\      
+Average Rating = AVERAGE(amazon_sales[rating])       \\                   
+Total Reviews = SUM(amazon_sales[rating_count])       \\
+Top Product by Sales = RANKX(ALL(amazon_sales[product_name]), [Total Revenue], , DESC)\\
 
 ### 3. Visualizations Built
 
