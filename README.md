@@ -16,7 +16,7 @@ To design an interactive and impactful dashboard using Amazon product sales and 
 
 # Dataset
 
-**File:** `amazon_sales.xlsx`  \\
+**File:** `amazon_sales.xlsx`  
 **Source:** https://www.kaggle.com/datasets/karkavelrajaj/amazon-sales-dataset
 
 It includes:
@@ -48,25 +48,25 @@ It includes:
 - Generally, create relationships if needed (in this case, one table was sufficient)
   
 ### Calculated columns created
-discount = [actual_price] - [discounted_price] \\
-discountpercent = (([actual_price] - [discounted_price]) / [actual_price]) * 100
+- discount = [actual_price] - [discounted_price] 
+- discountpercent = (([actual_price] - [discounted_price]) / [actual_price]) * 100
 
 ### DAX Measures Created
-Total Revenue  = SUM(amazon_sales[discounted_price])      \\                
-Total Discount Given  = SUM(amazon_sales[discount])        \\    
-Average Discount%  = AVERAGE(amazon_sales[discountpercent])  \\      
-Average Rating = AVERAGE(amazon_sales[rating])       \\                   
-Total Reviews = SUM(amazon_sales[rating_count])       \\
-Top Product by Sales = RANKX(ALL(amazon_sales[product_name]), [Total Revenue], , DESC)\\
+- Total Revenue  = SUM(amazon_sales[discounted_price])                     
+- Total Discount Given  = SUM(amazon_sales[discount])           
+- Average Discount%  = AVERAGE(amazon_sales[discountpercent])        
+- Average Rating = AVERAGE(amazon_sales[rating])                         
+- Total Reviews = SUM(amazon_sales[rating_count])       
+- Top Product by Sales = RANKX(ALL(amazon_sales[product_name]), [Total Revenue], , DESC)
 
 ### 3. Visualizations Built
 
-Bar chart – Revenue by Category (Which product categories earn the highest revenue?)                      
-100% Stacked Bar – Revenue vs. Discounts (Are discounts proportionate to revenue across categories?)   
-Word Cloud – Review title (High level Customer feedback?)           
-Table – Top Products by Revenue and it's avg rating - What are the top 10 revenue generating products?                
-Scatter Chart – Revenue vs Rating - How does each category perform in twerms of revenue and customer satisfaction?       
-KPI Cards - It shows What are the high-level metrics? 
+- Bar chart – Revenue by Category (Which product categories earn the highest revenue?)                      
+- 100% Stacked Bar – Revenue vs. Discounts (Are discounts proportionate to revenue across categories?)   
+- Word Cloud – Review title (High level Customer feedback?)           
+- Table – Top Products by Revenue and it's avg rating - What are the top 10 revenue generating products?                
+- Scatter Chart – Revenue vs Rating - How does each category perform in twerms of revenue and customer satisfaction?       
+- KPI Cards - It shows What are the high-level metrics? 
 
 Incorporated an interactive slicer that allows the dashboard metrics and chart to be displayed according to the product category.
 
