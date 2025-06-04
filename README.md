@@ -70,7 +70,6 @@ It includes:
 
 Incorporated an interactive slicer that allows the dashboard metrics and chart to be displayed according to the product category.
 
----
 
 ### 4. Final Dashboard Preview
 
@@ -78,7 +77,7 @@ Incorporated an interactive slicer that allows the dashboard metrics and chart t
 
 ---
 
-## Key Insights for better decision making of the company
+### Key Insights for better decision making of the company
 
 - Focus on enhancing the success of top-selling categories and items.  
 - Modify discount approaches to boost profit margins.  
@@ -86,7 +85,7 @@ Incorporated an interactive slicer that allows the dashboard metrics and chart t
 - Employ customer terminology for more effective marketing and product communication.  
 ---
 
-##  Tools Used
+###  Tools Used
 
 - Microsoft Power BI (Desktop)
 - Power Query Editor
