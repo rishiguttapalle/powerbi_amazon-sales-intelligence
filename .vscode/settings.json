@@ -1,0 +1,10 @@
+{
+    "sqltools.connections": [],
+    "sqltools.useNodeRuntime": true,
+    "workbench.editorAssociations": {
+        "*.parquet": "duckdb.dataFileViewer",
+        "*.csv": "duckdb.dataFileViewer",
+        "*.tsv": "duckdb.dataFileViewer",
+        "*.xlsx": "duckdb.dataFileViewer"
+    }
+}
