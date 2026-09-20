@@ -1,0 +1,27 @@
+# Amazon Sales Intelligence — Python deps
+# Install:  .\venv\Scripts\python.exe -m pip install -r requirements.txt
+# (or: python -m venv venv && venv\Scripts\activate && pip install -r requirements.txt)
+#
+# Versions pinned to this project's venv. Torch is pulled in by transformers /
+# sentence-transformers; for a CPU-only wheel on Windows/Linux you can instead:
+#   pip install torch --index-url https://download.pytorch.org/whl/cpu
+
+# Data & DuckDB warehouse (Phases 1–2, 0_build_database)
+pandas==3.0.6
+numpy==2.5.3
+openpyxl==3.1.5
+duckdb==1.5.5
+
+# Hypothesis testing (Phase 3)
+scipy==1.18.1
+statsmodels==0.15.0
+
+# NLP (Phase 4 started; model names live in python/config.py)
+transformers==5.17.0
+sentence-transformers==6.0.1
+bertopic==0.17.4
+scikit-learn==1.9.1
+
+# Notebook runtime
+jupyter==1.1.1
+ipykernel==7.3.0
