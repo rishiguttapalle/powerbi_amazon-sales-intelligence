@@ -16,11 +16,13 @@ duckdb==1.5.5
 scipy==1.18.1
 statsmodels==0.15.0
 
-# NLP (Phase 4 started; model names live in python/config.py)
+# NLP (Phase 4; model names live in python/config.py)
 transformers==5.17.0
 sentence-transformers==6.0.1
 bertopic==0.17.4
 scikit-learn==1.9.1
+openai>=1.40.0  # optional: LLM topic labels when OPENAI_API_KEY is set
+python-dotenv>=1.0.0  # load repo-root .env into os.environ
 
 # Notebook runtime
 jupyter==1.1.1

@@ -1,9 +1,12 @@
 from pathlib import Path
 
+from dotenv import load_dotenv
+
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
+load_dotenv(PROJECT_ROOT / ".env")  # OPENAI_API_KEY for topic labels (optional)
+
 DATA_RAW = PROJECT_ROOT / "data" / "raw"
 DATA_PROCESSED = PROJECT_ROOT / "data" / "processed"
-OUTPUTS_DIR = PROJECT_ROOT / "python" / "outputs"
 SCHEMA_PATH = PROJECT_ROOT / "sql" / "schema.sql"
 DB_PATH = PROJECT_ROOT / "amazon_sales_intelligence.db"
 
@@ -14,6 +17,11 @@ NLP_RESULTS_PATH = DATA_PROCESSED / "nlp_results.csv"
 TOPIC_SUMMARY_PATH = DATA_PROCESSED / "topic_summary.csv"
 TOPIC_SUMMARY_ACTIONABLE_PATH = DATA_PROCESSED / "topic_summary_actionable.csv"
 NLP_OUTLIER_XTAB_PATH = DATA_PROCESSED / "nlp_outlier_xtab.csv"
+# Phase 5 — Power BI import tables (1 row/product fact + topic dimension)
+FACT_PRODUCT_ANALYTICS_PATH = DATA_PROCESSED / "fact_product_analytics.csv"
+DIM_TOPIC_PATH = DATA_PROCESSED / "dim_topic.csv"
+# topic_id → topic_label lookup (LLM primary, top-terms fallback); avoids re-calling the API
+TOPIC_LABEL_CACHE_PATH = DATA_PROCESSED / "topic_label_cache.csv"
 
 # Parent → child load order (drop in reverse)
 STAR_TABLES = ("dim_category", "dim_product", "fact_product_metrics")
@@ -43,14 +51,15 @@ SMALL_CATEGORY_THRESHOLD = 10
 EMBEDDING_MODEL = "all-MiniLM-L6-v2"
 SENTIMENT_MODEL = "nlptown/bert-base-multilingual-uncased-sentiment"
 BERTOPIC_MIN_TOPIC_SIZE = 15
-NMF_N_TOPICS = 10
-TFIDF_MAX_FEATURES = 2000
 # Min products in a category×topic cell for Phase 5 "threat zone" export
 TOPIC_MIN_PRODUCTS = 10
-# Extra stops for BERTopic/NMF c-TF-IDF labels (clustering uses embeddings, not these)
+# Extra stops for BERTopic c-TF-IDF keywords (clustering uses embeddings, not these)
 NLP_DOMAIN_STOPWORDS = frozenset({
     "product", "products", "amazon", "good", "nice", "quality", "price",
     "like", "love", "great", "best", "awesome", "excellent", "thank", "thanks",
     "really", "also", "one", "get", "got", "use", "using", "used", "item",
     "order", "ordered", "delivery", "review", "reviews", "buy", "bought",
 })
+# Topic labels: OPENAI_API_KEY in repo-root .env (or shell); else top-term concat
+TOPIC_LABEL_LLM_MODEL = "gpt-4o-mini"
+TOPIC_LABEL_TOP_N_TERMS = 5

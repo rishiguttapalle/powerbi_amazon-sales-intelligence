@@ -19,7 +19,8 @@ Paths, thresholds, and shared helpers live in `python/config.py` and `python/uti
 | 2 | DuckDB database build | Done |
 | 3 | Statistical analysis (confound-controlled) | Done |
 | 4 | NLP on review text (sentiment + topics) | Done |
-| 5 | Power BI dashboard | Planned *(legacy prototype in `legacy/`)* |
+| 5.0 | Power BI export tables | Done |
+| 5.1+ | Power BI dashboard | Ready to start |
 
 ---
 
@@ -60,6 +61,17 @@ pip install torch --index-url https://download.pytorch.org/whl/cpu
 
 Processed CSVs and the DuckDB file are **gitignored**. Anyone cloning the repo rebuilds them locally with the pipeline below.
 
+### 4. Optional — LLM topic labels (`.env`)
+
+Copy the example and add your key (file is gitignored):
+
+```powershell
+Copy-Item .env.example .env
+# then edit .env and set OPENAI_API_KEY=sk-...
+```
+
+Without a key, Phase 4 still runs and uses **top-term** topic labels. With a key, re-run Phase 4 Block D to refresh `dim_topic.csv` / `topic_label_cache.csv`.
+
 ---
 
 ## Running the pipeline
@@ -72,7 +84,8 @@ Run steps **in order**. Phase 2 always **rebuilds** the DuckDB warehouse from th
 | 1 | `python/1_build_model.ipynb` | `dim_*.csv`, `fact_*.csv`, `review_text.csv` |
 | 2 | `2_build_database.py` (see below) | `amazon_sales_intelligence.db` |
 | 3 | `python/3_hypothesis_test.ipynb` | Controlled discount vs rating / engagement results |
-| 4 | `python/4_review_nlp.ipynb` | `nlp_results.csv`, `topic_summary.csv`, `topic_summary_actionable.csv`, `nlp_outlier_xtab.csv` |
+| 4 | `python/4_review_nlp.ipynb` | NLP outputs + Step 5.0 exports |
+| 5.0 | `python/5_build_powerbi_exports.py` | `fact_product_analytics.csv`, `dim_topic.csv` (+ actionable labels) |
 | 5 | Power BI Desktop *(planned)* | Dashboard under `dashboard/` |
 
 ### Phase 2 — rebuild the database
@@ -109,11 +122,13 @@ cd python
 │   ├── 2_build_database.py
 │   ├── 3_hypothesis_test.ipynb
 │   ├── 4_review_nlp.ipynb
-│   └── outputs/
+│   ├── 5_build_powerbi_exports.py  # Step 5.0 Power BI tables
+│   └── topic_labeling.py           # LLM / top-term topic labels
 ├── sql/
 │   └── schema.sql
-├── dashboard/                    # Phase 5
+├── dashboard/                    # Phase 5.1+ (.pbix)
 ├── legacy/                       # Earlier Power BI prototype
+├── .env.example                  # Template for OPENAI_API_KEY
 ├── requirements.txt
 └── amazon_sales_intelligence.db  # Generated (gitignored)
 ```
@@ -150,7 +165,8 @@ Sentiment (transformer star ratings) and topic structure on review text — the 
 | Check | What we do |
 |-------|------------|
 | Trust gate | Predicted stars vs product `rating` (MAE / Pearson) before topics |
-| Labels | BERTopic c-TF-IDF uses **English + domain stopwords** (`NLP_DOMAIN_STOPWORDS` in `config.py`) so topic names are readable; clustering still uses embeddings + seeded UMAP |
+| Topic keywords | BERTopic c-TF-IDF uses **English + domain stopwords** (`NLP_DOMAIN_STOPWORDS`); clustering still uses embeddings + seeded UMAP |
+| Topic labels | Put `OPENAI_API_KEY` in repo-root `.env` for LLM labels (`topic_labeling.py`, cached); otherwise top-term concatenation |
 | Outliers | `topic = -1` kept in `nlp_results.csv`, excluded from topic summaries; Block F exports discount×rating outlier rates to `nlp_outlier_xtab.csv` |
 | Actionable export | `topic_summary_actionable.csv` keeps only cells with **`n_products ≥ TOPIC_MIN_PRODUCTS` (10)** and low-rating / high-discount flags |
 
@@ -165,11 +181,29 @@ Sentiment (transformer star ratings) and topic structure on review text — the 
 
 - `data/processed/nlp_results.csv`
 - `data/processed/topic_summary.csv`
-- `data/processed/topic_summary_actionable.csv`
+- `data/processed/topic_summary_actionable.csv` (includes `topic_label` after Step 5.0)
 - `data/processed/nlp_outlier_xtab.csv`
+- `data/processed/fact_product_analytics.csv` — Power BI fact (1 row/product)
+- `data/processed/dim_topic.csv` — Power BI topic dimension
 
-### Phase 5 — Dashboard *(planned)*
-Executive visuals in Power BI on the star schema and NLP actionable topics. A prior prototype lives under `legacy/`.
+### Phase 5 — Dashboard
+**Step 5.0 is done.** Import into Power BI Desktop:
+
+| Table | Role |
+|-------|------|
+| `fact_product_analytics.csv` | Fact (1 row/product) |
+| `dim_category.csv` | Category dimension |
+| `dim_topic.csv` | Topic labels |
+| `topic_summary_actionable.csv` | Threat-zone page (disconnected or related by category + topic) |
+| `nlp_outlier_xtab.csv` | Optional outlier callout |
+
+Rebuild exports anytime:
+
+```powershell
+.\venv\Scripts\python.exe python\5_build_powerbi_exports.py
+```
+
+Expected: **1350** fact rows; threat-zone product count printed in the console. Legacy prototype (reference only): `legacy/`.
 
 ---
 
@@ -181,6 +215,7 @@ Central constants: `python/config.py`
 - `PRICE_TIER_QUANTILES` / `PRICE_TIER_LABELS`
 - `SMALL_CATEGORY_THRESHOLD` (Phase 3 → `Other`)
 - `TOPIC_MIN_PRODUCTS`, `NLP_DOMAIN_STOPWORDS`, `NLP_OUTLIER_XTAB_PATH` (Phase 4)
+- `TOPIC_LABEL_CACHE_PATH`, `TOPIC_LABEL_LLM_MODEL`, `TOPIC_LABEL_TOP_N_TERMS` (topic labeling; key from `.env`)
 - NLP model names (`SENTIMENT_MODEL`, `EMBEDDING_MODEL`, …)
 
 Shared helpers: `python/utils.py`
@@ -198,7 +233,7 @@ Shared helpers: `python/utils.py`
 | Environment | VS Code, Git, Python venv |
 | Data | pandas, openpyxl, DuckDB |
 | Stats | scipy, statsmodels |
-| NLP | transformers, sentence-transformers, BERTopic, scikit-learn |
+| NLP | transformers, sentence-transformers, BERTopic, scikit-learn, openai (optional labels) |
 | BI | Power BI Desktop |
 | Repro | `requirements.txt`, `config.py`, `utils.py` |
 
