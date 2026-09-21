@@ -10,6 +10,10 @@ DB_PATH = PROJECT_ROOT / "amazon_sales_intelligence.db"
 RAW_SALES_PATH = DATA_RAW / "amazon_sales.xlsx"
 PRODUCTS_CLEAN_PATH = DATA_PROCESSED / "products_clean.csv"
 REVIEW_TEXT_PATH = DATA_PROCESSED / "review_text.csv"
+NLP_RESULTS_PATH = DATA_PROCESSED / "nlp_results.csv"
+TOPIC_SUMMARY_PATH = DATA_PROCESSED / "topic_summary.csv"
+TOPIC_SUMMARY_ACTIONABLE_PATH = DATA_PROCESSED / "topic_summary_actionable.csv"
+NLP_OUTLIER_XTAB_PATH = DATA_PROCESSED / "nlp_outlier_xtab.csv"
 
 # Parent → child load order (drop in reverse)
 STAR_TABLES = ("dim_category", "dim_product", "fact_product_metrics")
@@ -41,3 +45,12 @@ SENTIMENT_MODEL = "nlptown/bert-base-multilingual-uncased-sentiment"
 BERTOPIC_MIN_TOPIC_SIZE = 15
 NMF_N_TOPICS = 10
 TFIDF_MAX_FEATURES = 2000
+# Min products in a category×topic cell for Phase 5 "threat zone" export
+TOPIC_MIN_PRODUCTS = 10
+# Extra stops for BERTopic/NMF c-TF-IDF labels (clustering uses embeddings, not these)
+NLP_DOMAIN_STOPWORDS = frozenset({
+    "product", "products", "amazon", "good", "nice", "quality", "price",
+    "like", "love", "great", "best", "awesome", "excellent", "thank", "thanks",
+    "really", "also", "one", "get", "got", "use", "using", "used", "item",
+    "order", "ordered", "delivery", "review", "reviews", "buy", "bought",
+})

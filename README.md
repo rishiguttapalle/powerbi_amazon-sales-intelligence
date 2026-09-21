@@ -18,7 +18,7 @@ Paths, thresholds, and shared helpers live in `python/config.py` and `python/uti
 | 1 | Star-schema data model (CSV) | Done |
 | 2 | DuckDB database build | Done |
 | 3 | Statistical analysis (confound-controlled) | Done |
-| 4 | NLP on review text (sentiment + topics) | In progress |
+| 4 | NLP on review text (sentiment + topics) | Done |
 | 5 | Power BI dashboard | Planned *(legacy prototype in `legacy/`)* |
 
 ---
@@ -72,7 +72,7 @@ Run steps **in order**. Phase 2 always **rebuilds** the DuckDB warehouse from th
 | 1 | `python/1_build_model.ipynb` | `dim_*.csv`, `fact_*.csv`, `review_text.csv` |
 | 2 | `2_build_database.py` (see below) | `amazon_sales_intelligence.db` |
 | 3 | `python/3_hypothesis_test.ipynb` | Controlled discount vs rating / engagement results |
-| 4 | NLP notebook *(in progress)* | Sentiment + topics on `review_text` |
+| 4 | `python/4_review_nlp.ipynb` | `nlp_results.csv`, `topic_summary.csv`, `topic_summary_actionable.csv`, `nlp_outlier_xtab.csv` |
 | 5 | Power BI Desktop *(planned)* | Dashboard under `dashboard/` |
 
 ### Phase 2 — rebuild the database
@@ -100,21 +100,22 @@ cd python
 .
 ├── data/
 │   ├── raw/                      # amazon_sales.xlsx (download from Kaggle)
-│   └── processed/                # products_clean + star-schema CSVs (generated)
+│   └── processed/                # generated CSVs (gitignored)
 ├── python/
-│   ├── config.py                 # Paths, thresholds, NLP model names
+│   ├── config.py                 # Paths, thresholds, NLP stops / models
 │   ├── utils.py                  # Shared loaders, parsers, DB helpers
-│   ├── 0_data_audit.ipynb        # Phase 0 — audit + clean export
-│   ├── 1_build_model.ipynb       # Phase 1 — star schema CSVs
-│   ├── 2_build_database.py       # Phase 2 — rebuild DuckDB
-│   ├── 3_hypothesis_test.ipynb   # Phase 3 — correlations, ANOVA, controlled OLS
-│   └── outputs/                  # Optional analysis artifacts
+│   ├── 0_data_audit.ipynb
+│   ├── 1_build_model.ipynb
+│   ├── 2_build_database.py
+│   ├── 3_hypothesis_test.ipynb
+│   ├── 4_review_nlp.ipynb
+│   └── outputs/
 ├── sql/
-│   └── schema.sql                # dim_category, dim_product, fact_product_metrics
-├── dashboard/                    # Power BI deliverable (Phase 5)
-├── legacy/                       # Earlier Power BI prototype + notes
+│   └── schema.sql
+├── dashboard/                    # Phase 5
+├── legacy/                       # Earlier Power BI prototype
 ├── requirements.txt
-└── amazon_sales_intelligence.db  # Generated DuckDB warehouse (gitignored)
+└── amazon_sales_intelligence.db  # Generated (gitignored)
 ```
 
 ---
@@ -143,11 +144,32 @@ Answers the business question with confound control:
 
 **Headline result (current data):** after controlling for category and price tier, deeper discounts remain associated with **lower** ratings and **lower** lifetime rating volume. Category mix does **not** explain the relationship away; if anything, it partly masked it.
 
-### Phase 4 — NLP *(in progress)*
-Sentiment and topic structure on review text. Model names and related knobs live in `python/config.py` (`SENTIMENT_MODEL`, `EMBEDDING_MODEL`, …).
+### Phase 4 — NLP
+Sentiment (transformer star ratings) and topic structure on review text — the *why* behind Phase 3.
+
+| Check | What we do |
+|-------|------------|
+| Trust gate | Predicted stars vs product `rating` (MAE / Pearson) before topics |
+| Labels | BERTopic c-TF-IDF uses **English + domain stopwords** (`NLP_DOMAIN_STOPWORDS` in `config.py`) so topic names are readable; clustering still uses embeddings + seeded UMAP |
+| Outliers | `topic = -1` kept in `nlp_results.csv`, excluded from topic summaries; Block F exports discount×rating outlier rates to `nlp_outlier_xtab.csv` |
+| Actionable export | `topic_summary_actionable.csv` keeps only cells with **`n_products ≥ TOPIC_MIN_PRODUCTS` (10)** and low-rating / high-discount flags |
+
+**Current run (summary):**
+
+- Trust gate: MAE ≈ 0.76, Pearson r ≈ 0.42  
+- Method: `BERTopic (all-MiniLM-L6-v2, seeded UMAP, stopword vectorizer)`  
+- Outlier share ≈ 7.6%; deepest-discount quartile is **not** overall outlier-heavy — Phase 3 signal lives mainly in named topics  
+- Phase 5 should prefer **`topic_summary_actionable.csv`**
+
+**Outputs:**
+
+- `data/processed/nlp_results.csv`
+- `data/processed/topic_summary.csv`
+- `data/processed/topic_summary_actionable.csv`
+- `data/processed/nlp_outlier_xtab.csv`
 
 ### Phase 5 — Dashboard *(planned)*
-Executive visuals in Power BI on the star schema (and NLP outputs once available). A prior prototype lives under `legacy/`.
+Executive visuals in Power BI on the star schema and NLP actionable topics. A prior prototype lives under `legacy/`.
 
 ---
 
@@ -155,10 +177,11 @@ Executive visuals in Power BI on the star schema (and NLP outputs once available
 
 Central constants: `python/config.py`
 
-- Paths (`RAW_SALES_PATH`, processed CSVs, `DB_PATH`, `STAR_CSV_PATHS`)
+- Paths (`RAW_SALES_PATH`, processed CSVs, `DB_PATH`, `STAR_CSV_PATHS`, NLP output paths)
 - `PRICE_TIER_QUANTILES` / `PRICE_TIER_LABELS`
-- `SMALL_CATEGORY_THRESHOLD` (unstable categories → `Other` in Phase 3)
-- NLP model names (Phase 4)
+- `SMALL_CATEGORY_THRESHOLD` (Phase 3 → `Other`)
+- `TOPIC_MIN_PRODUCTS`, `NLP_DOMAIN_STOPWORDS`, `NLP_OUTLIER_XTAB_PATH` (Phase 4)
+- NLP model names (`SENTIMENT_MODEL`, `EMBEDDING_MODEL`, …)
 
 Shared helpers: `python/utils.py`
 
