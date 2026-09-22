@@ -51,6 +51,11 @@ SMALL_CATEGORY_THRESHOLD = 10
 EMBEDDING_MODEL = "all-MiniLM-L6-v2"
 SENTIMENT_MODEL = "nlptown/bert-base-multilingual-uncased-sentiment"
 BERTOPIC_MIN_TOPIC_SIZE = 15
+# Fitted BERTopic cache (skip embed + UMAP + cluster on re-run)
+ARTIFACTS_DIR = PROJECT_ROOT / "python" / "artifacts"
+BERTOPIC_MODEL_DIR = ARTIFACTS_DIR / "bertopic_model"
+BERTOPIC_TOPICS_PATH = ARTIFACTS_DIR / "bertopic_topics.npy"
+BERTOPIC_META_PATH = ARTIFACTS_DIR / "bertopic_meta.json"
 # Min products in a category×topic cell for Phase 5 watchlist / Critical export
 TOPIC_MIN_PRODUCTS = 10
 # Critical tier (subset of watchlist cells): among watchlist, rating ≤ Q1 and discount ≥ median

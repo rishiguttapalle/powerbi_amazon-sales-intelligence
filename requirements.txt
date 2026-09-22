@@ -6,7 +6,7 @@
 # sentence-transformers; for a CPU-only wheel on Windows/Linux you can instead:
 #   pip install torch --index-url https://download.pytorch.org/whl/cpu
 
-# Data & DuckDB warehouse (Phases 1–2, 0_build_database)
+# Data & DuckDB warehouse (Phases 1–2; python/2_build_database.py)
 pandas==3.0.6
 numpy==2.5.3
 openpyxl==3.1.5

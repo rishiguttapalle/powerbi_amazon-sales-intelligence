@@ -5,3 +5,5 @@ __pycache__/
 data/processed/*.csv
 *.db
 .env
+legacy/
+python/artifacts/
