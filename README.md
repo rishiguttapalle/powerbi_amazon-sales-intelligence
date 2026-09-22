@@ -15,14 +15,14 @@ Paths, thresholds, and shared helpers live in `python/config.py` and `python/uti
 ## Status
 
 
-| Phase | Deliverable                                | Status |
-| ----- | ------------------------------------------ | ------ |
-| 0     | Data audit + cleaning                      | Done   |
-| 1     | Star-schema data model (CSV)               | Done   |
-| 2     | DuckDB database build                      | Done   |
-| 3     | Statistical analysis (confound-controlled) | Done   |
-| 4     | NLP on review text (sentiment + topics)    | Done   |
-| 5     | Power BI dashboard                         | Done   |
+| Phase | Deliverable                                | 
+| ----- | ------------------------------------------ | 
+| 0     | Data audit + cleaning                      | 
+| 1     | Star-schema data model (CSV)               | 
+| 2     | DuckDB database build                      | 
+| 3     | Statistical analysis (confound-controlled) | 
+| 4     | NLP on review text (sentiment + topics)    | 
+| 5     | Power BI dashboard                         |
 
 
 **Dashboard file:** `[dashboard/amazon_sales_intelligence.pbix](dashboard/amazon_sales_intelligence.pbix)`
@@ -121,7 +121,7 @@ Run steps **in order**. Phase 2 always **rebuilds** DuckDB from the latest star-
 | Concern               | Behavior                                                                                                                                                                                                 |
 | --------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | First run             | Downloads sentiment + embedding models into the **local Hugging Face cache** (once per machine). Fits BERTopic (embed → UMAP → cluster) and saves under `python/artifacts/`.                             |
-| Later Block D re-runs | If meta matches (`n_docs`, embedding model, `min_topic_size`, seed), **loads** the fitted model + `bertopic_topics.npy` — **skips** re-embed / UMAP / cluster and **does not** re-download from the Hub. |
+| Later re-runs | If meta matches (`n_docs`, embedding model, `min_topic_size`, seed), **loads** the fitted model + `bertopic_topics.npy` — **skips** re-embed / UMAP / cluster and **does not** re-download from the Hub. |
 | RAM                   | Cache hits still briefly load weights into memory via `BERTopic.load` (local disk → RAM). That is not a Hub download and not a full re-fit.                                                              |
 | Topic labels          | `OPENAI_API_KEY` → LLM JSON labels cached in `topic_label_cache.csv`; else top-term concat.                                                                                                              |
 
@@ -169,7 +169,7 @@ Optional cache check (does not modify notebook/production code):
 ├── dashboard/
 │   ├── amazon_sales_intelligence.pbix
 │   └── screenshots/              # Page 1–3 previews
-├── legacy/                       # Earlier prototype (reference only; gitignored)
+├── legacy/                      
 ├── .env.example
 └── requirements.txt
 ```
@@ -206,7 +206,7 @@ Apply `sql/schema.sql`, named-column CSV loads into DuckDB, FK validation.
 3. ANOVA — discount depth differs by category *(confound is real)*
 4. OLS with HC3 robust SEs — discount effect **conditional on category + price tier**
 
-**Headline result:** after controls, deeper discounts remain associated with **lower** ratings and **lower** lifetime rating volume. Category mix does **not** explain the relationship away.
+**Result:** after controls, deeper discounts remain associated with **lower** ratings and **lower** lifetime rating volume. Category mix does **not** explain the relationship away.
 
 ### Phase 4 — NLP
 
@@ -222,7 +222,7 @@ Sentiment + topics — the *why* behind Phase 3.
 | Watchlist / Critical | **Watchlist:** `n ≥ 10` + below-category-median rating & above-category-median discount. **Critical:** among watchlist, rating ≤ Q1 & discount ≥ median (Page 1 KPI) |
 
 
-**Current run (summary):** trust gate MAE ≈ 0.76, r ≈ 0.42; BERTopic outlier share ≈ 7.6%; deepest-discount quartile is **not** outlier-heavy — Phase 3 signal lives in named topics.
+**Summary:** trust gate MAE ≈ 0.76, r ≈ 0.42; BERTopic outlier share ≈ 7.6%; deepest-discount quartile is **not** outlier-heavy — Phase 3 signal lives in named topics.
 
 **Key outputs:** `nlp_results.csv`, `topic_summary.csv`, `topic_summary_actionable.csv`, `nlp_outlier_xtab.csv`, `fact_product_analytics.csv`, `dim_topic.csv`, `topic_label_cache.csv`
 
@@ -253,8 +253,6 @@ Open `[dashboard/amazon_sales_intelligence.pbix](dashboard/amazon_sales_intellig
 | **2 — Discount & Rating Analysis** | Where (by category / price tier) is high discount paired with weaker ratings?                     | Combo chart (discount + rating by category); slicers: category, price tier                                                              |
 | **3 — Threat Zones / Watchlist**   | Which review themes are on the relative watchlist, and which are Critical enough to act on first? | Watchlist + Critical cards; watchlist cell table; product detail table; slicers: category, price tier                                   |
 
-
-Legacy prototype (reference only): `legacy/`.
 
 ---
 
