@@ -51,8 +51,11 @@ SMALL_CATEGORY_THRESHOLD = 10
 EMBEDDING_MODEL = "all-MiniLM-L6-v2"
 SENTIMENT_MODEL = "nlptown/bert-base-multilingual-uncased-sentiment"
 BERTOPIC_MIN_TOPIC_SIZE = 15
-# Min products in a category×topic cell for Phase 5 "threat zone" export
+# Min products in a category×topic cell for Phase 5 watchlist / Critical export
 TOPIC_MIN_PRODUCTS = 10
+# Critical tier (subset of watchlist cells): among watchlist, rating ≤ Q1 and discount ≥ median
+CRITICAL_RATING_QUANTILE = 0.25
+CRITICAL_DISCOUNT_QUANTILE = 0.50
 # Extra stops for BERTopic c-TF-IDF keywords (clustering uses embeddings, not these)
 NLP_DOMAIN_STOPWORDS = frozenset({
     "product", "products", "amazon", "good", "nice", "quality", "price",

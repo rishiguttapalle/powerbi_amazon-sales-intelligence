@@ -2,11 +2,11 @@
 
 > **Business question:** Does deeper discounting actually earn more customer engagement and satisfaction — or is it concentrated in categories that would sell anyway, meaning the discount budget is being wasted?
 
-This repository is a reproducible analytics pipeline on a public Amazon product/review dataset:
+Reproducible analytics pipeline on a public Amazon product/review dataset:
 
 **data audit → star schema → DuckDB warehouse → confound-controlled statistics → NLP on reviews → Power BI dashboard**
 
-Paths, thresholds, and shared helpers live in `python/config.py` and `python/utils.py` so notebooks never hardcode local machine paths.
+Paths, thresholds, and shared helpers live in `python/config.py` and `python/utils.py` (no hardcoded machine paths in notebooks).
 
 ---
 
@@ -19,8 +19,9 @@ Paths, thresholds, and shared helpers live in `python/config.py` and `python/uti
 | 2 | DuckDB database build | Done |
 | 3 | Statistical analysis (confound-controlled) | Done |
 | 4 | NLP on review text (sentiment + topics) | Done |
-| 5.0 | Power BI export tables | Done |
-| 5.1+ | Power BI dashboard | Ready to start |
+| 5 | Power BI dashboard | Done |
+
+**Dashboard file:** [`dashboard/amazon_sales_intelligence.pbix`](dashboard/amazon_sales_intelligence.pbix)
 
 ---
 
@@ -59,51 +60,48 @@ pip install torch --index-url https://download.pytorch.org/whl/cpu
 | **Source** | [Kaggle — Amazon Sales Dataset](https://www.kaggle.com/datasets/karkavelrajaj/amazon-sales-dataset) |
 | **Place at** | `data/raw/amazon_sales.xlsx` |
 
-Processed CSVs and the DuckDB file are **gitignored**. Anyone cloning the repo rebuilds them locally with the pipeline below.
+Processed CSVs and the DuckDB file are **gitignored**. Rebuild them locally with the pipeline below.
 
 ### 4. Optional — LLM topic labels (`.env`)
 
-Copy the example and add your key (file is gitignored):
-
 ```powershell
 Copy-Item .env.example .env
-# then edit .env and set OPENAI_API_KEY=sk-...
+# edit .env → OPENAI_API_KEY=sk-...
 ```
 
-Without a key, Phase 4 still runs and uses **top-term** topic labels. With a key, re-run Phase 4 Block D to refresh `dim_topic.csv` / `topic_label_cache.csv`.
+Without a key, Phase 4 uses **top-term** topic labels. With a key, re-run Phase 4 Block D to refresh `dim_topic.csv` / `topic_label_cache.csv`.
 
 ---
 
 ## Running the pipeline
 
-Run steps **in order**. Phase 2 always **rebuilds** the DuckDB warehouse from the latest star-schema CSVs (drop → create → load → FK validate), so the database stays in sync after re-running Phase 1.
+Run steps **in order**. Phase 2 always **rebuilds** DuckDB from the latest star-schema CSVs.
 
 | Step | Run | Produces |
 |-----:|-----|----------|
-| 0 | `python/0_data_audit.ipynb` | `data/processed/products_clean.csv` |
-| 1 | `python/1_build_model.ipynb` | `dim_*.csv`, `fact_*.csv`, `review_text.csv` |
-| 2 | `2_build_database.py` (see below) | `amazon_sales_intelligence.db` |
+| 0 | `python/0_data_audit.ipynb` | `products_clean.csv` |
+| 1 | `python/1_build_model.ipynb` | `dim_*.csv`, `fact_product_metrics.csv`, `review_text.csv` |
+| 2 | `python/2_build_database.py` | `amazon_sales_intelligence.db` |
 | 3 | `python/3_hypothesis_test.ipynb` | Controlled discount vs rating / engagement results |
-| 4 | `python/4_review_nlp.ipynb` | NLP outputs + Step 5.0 exports |
-| 5.0 | `python/5_build_powerbi_exports.py` | `fact_product_analytics.csv`, `dim_topic.csv` (+ actionable labels) |
-| 5 | Power BI Desktop *(planned)* | Dashboard under `dashboard/` |
+| 4 | `python/4_review_nlp.ipynb` | NLP outputs + watchlist / Critical flags |
+| 5.0 | `python/5_build_powerbi_exports.py` | `fact_product_analytics.csv`, `dim_topic.csv`, actionable labels |
+| 5 | Open `dashboard/amazon_sales_intelligence.pbix` | Interactive dashboard |
 
 ### Phase 2 — rebuild the database
-
-From the repo root:
 
 ```powershell
 .\venv\Scripts\python.exe python\2_build_database.py
 ```
 
-Or from `python/`:
+**Expected load sizes (current dataset):** 29 categories · 1,350 products · 1,350 fact rows · FK validation OK.
+
+### Refresh Power BI exports
 
 ```powershell
-cd python
-..\venv\Scripts\python.exe 2_build_database.py
+.\venv\Scripts\python.exe python\5_build_powerbi_exports.py
 ```
 
-**Expected load sizes (current dataset):** 29 categories · 1,350 products · 1,350 fact rows · FK validation OK.
+Then **Refresh** in Power BI Desktop. Expect **1,350** fact rows; console prints watchlist (~619) and Critical (~133) counts.
 
 ---
 
@@ -112,25 +110,24 @@ cd python
 ```text
 .
 ├── data/
-│   ├── raw/                      # amazon_sales.xlsx (download from Kaggle)
+│   ├── raw/                      # amazon_sales.xlsx (from Kaggle)
 │   └── processed/                # generated CSVs (gitignored)
 ├── python/
-│   ├── config.py                 # Paths, thresholds, NLP stops / models
+│   ├── config.py                 # Paths, thresholds, NLP / label settings
 │   ├── utils.py                  # Shared loaders, parsers, DB helpers
+│   ├── topic_labeling.py         # LLM / top-term topic labels + cache
 │   ├── 0_data_audit.ipynb
 │   ├── 1_build_model.ipynb
 │   ├── 2_build_database.py
 │   ├── 3_hypothesis_test.ipynb
 │   ├── 4_review_nlp.ipynb
-│   ├── 5_build_powerbi_exports.py  # Step 5.0 Power BI tables
-│   └── topic_labeling.py           # LLM / top-term topic labels
-├── sql/
-│   └── schema.sql
-├── dashboard/                    # Phase 5.1+ (.pbix)
-├── legacy/                       # Earlier Power BI prototype
-├── .env.example                  # Template for OPENAI_API_KEY
-├── requirements.txt
-└── amazon_sales_intelligence.db  # Generated (gitignored)
+│   └── 5_build_powerbi_exports.py
+├── sql/schema.sql
+├── dashboard/
+│   └── amazon_sales_intelligence.pbix
+├── legacy/                       # Earlier prototype (reference only)
+├── .env.example
+└── requirements.txt
 ```
 
 ---
@@ -138,72 +135,65 @@ cd python
 ## What each phase does
 
 ### Phase 0 — Data audit
-Inspect shape, dtypes, and nulls; detect non-numeric rating placeholders (`|`); drop bad rows; export a cleaned working table.
+Inspect shape, dtypes, and nulls; drop non-numeric rating placeholders (`|`); export `products_clean.csv`.
 
 ### Phase 1 — Data model
-Parse INR prices, split the category hierarchy, bucket price tiers, aggregate to **product** grain, and write a star schema:
+Parse INR prices, split category hierarchy, bucket price tiers, aggregate to **product** grain:
 
-- `dim_category` → `dim_product` → `fact_product_metrics`
-- `review_text` kept as a Python-side CSV (not loaded into the PBI-facing fact grain)
+- Star: `dim_category` → `dim_product` → `fact_product_metrics`
+- `review_text.csv` kept for NLP (not loaded into DuckDB fact grain)
 
 ### Phase 2 — Database
-Apply `sql/schema.sql`, load star CSVs into DuckDB with **named-column** inserts, and validate foreign keys.
+Apply `sql/schema.sql`, named-column CSV loads into DuckDB, FK validation.
 
 ### Phase 3 — Statistical analysis
-Answers the business question with confound control:
-
 1. Log-transform skewed engagement counts  
-2. Naive Pearson / Spearman (surface association)  
-3. ANOVA — does discount depth differ by category? *(confound is real)*  
+2. Naive Pearson / Spearman  
+3. ANOVA — discount depth differs by category *(confound is real)*  
 4. OLS with HC3 robust SEs — discount effect **conditional on category + price tier**
 
-**Headline result (current data):** after controlling for category and price tier, deeper discounts remain associated with **lower** ratings and **lower** lifetime rating volume. Category mix does **not** explain the relationship away; if anything, it partly masked it.
+**Headline result:** after controls, deeper discounts remain associated with **lower** ratings and **lower** lifetime rating volume. Category mix does **not** explain the relationship away.
 
 ### Phase 4 — NLP
-Sentiment (transformer star ratings) and topic structure on review text — the *why* behind Phase 3.
+Sentiment + topics — the *why* behind Phase 3.
 
 | Check | What we do |
 |-------|------------|
 | Trust gate | Predicted stars vs product `rating` (MAE / Pearson) before topics |
-| Topic keywords | BERTopic c-TF-IDF uses **English + domain stopwords** (`NLP_DOMAIN_STOPWORDS`); clustering still uses embeddings + seeded UMAP |
-| Topic labels | Put `OPENAI_API_KEY` in repo-root `.env` for LLM labels (`topic_labeling.py`, cached); otherwise top-term concatenation |
-| Outliers | `topic = -1` kept in `nlp_results.csv`, excluded from topic summaries; Block F exports discount×rating outlier rates to `nlp_outlier_xtab.csv` |
-| Actionable export | `topic_summary_actionable.csv` keeps only cells with **`n_products ≥ TOPIC_MIN_PRODUCTS` (10)** and low-rating / high-discount flags |
+| Topics | BERTopic + seeded UMAP; English + `NLP_DOMAIN_STOPWORDS` for c-TF-IDF keywords |
+| Labels | `OPENAI_API_KEY` in `.env` → LLM JSON labels (cached); else top-term concat |
+| Outliers | `topic = -1` kept in `nlp_results.csv`; Block F → `nlp_outlier_xtab.csv` |
+| Watchlist / Critical | **Watchlist:** `n ≥ 10` + below-category-median rating & above-category-median discount. **Critical:** among watchlist, rating ≤ Q1 & discount ≥ median (Page 1 KPI) |
 
-**Current run (summary):**
+**Current run (summary):** trust gate MAE ≈ 0.76, r ≈ 0.42; BERTopic outlier share ≈ 7.6%; deepest-discount quartile is **not** outlier-heavy — Phase 3 signal lives in named topics.
 
-- Trust gate: MAE ≈ 0.76, Pearson r ≈ 0.42  
-- Method: `BERTopic (all-MiniLM-L6-v2, seeded UMAP, stopword vectorizer)`  
-- Outlier share ≈ 7.6%; deepest-discount quartile is **not** overall outlier-heavy — Phase 3 signal lives mainly in named topics  
-- Phase 5 should prefer **`topic_summary_actionable.csv`**
+**Key outputs:** `nlp_results.csv`, `topic_summary.csv`, `topic_summary_actionable.csv`, `nlp_outlier_xtab.csv`, `fact_product_analytics.csv`, `dim_topic.csv`, `topic_label_cache.csv`
 
-**Outputs:**
+### Phase 5 — Power BI dashboard
 
-- `data/processed/nlp_results.csv`
-- `data/processed/topic_summary.csv`
-- `data/processed/topic_summary_actionable.csv` (includes `topic_label` after Step 5.0)
-- `data/processed/nlp_outlier_xtab.csv`
-- `data/processed/fact_product_analytics.csv` — Power BI fact (1 row/product)
-- `data/processed/dim_topic.csv` — Power BI topic dimension
+Open [`dashboard/amazon_sales_intelligence.pbix`](dashboard/amazon_sales_intelligence.pbix).
 
-### Phase 5 — Dashboard
-**Step 5.0 is done.** Import into Power BI Desktop:
+#### Model
 
 | Table | Role |
 |-------|------|
-| `fact_product_analytics.csv` | Fact (1 row/product) |
-| `dim_category.csv` | Category dimension |
-| `dim_topic.csv` | Topic labels |
-| `topic_summary_actionable.csv` | Threat-zone page (disconnected or related by category + topic) |
-| `nlp_outlier_xtab.csv` | Optional outlier callout |
+| `fact_product_analytics` | 1 row/product — metrics, NLP, `is_watchlist_product`, `is_critical_product` |
+| `dim_category` | Category dimension (`category_id`) |
+| `dim_topic` | Topic labels (`topic_id` ↔ fact `topic`) |
+| `topic_summary_actionable` | 14 watchlist cells (disconnected exploration table) |
+| `_Measures` | KPI measures (Total Products, Avg Rating, Critical, etc.) |
 
-Rebuild exports anytime:
+**KPI rule:** headline **Critical** (~133 products, ~10% of catalog). Watchlist (~619 / 14 cells) is the broader relative list — not “half the catalog is failing.”
 
-```powershell
-.\venv\Scripts\python.exe python\5_build_powerbi_exports.py
-```
+#### Pages (business questions)
 
-Expected: **1350** fact rows; threat-zone product count printed in the console. Legacy prototype (reference only): `legacy/`.
+| Page | Business question | What you see |
+|------|-------------------|--------------|
+| **1 — Executive Overview** | Does deeper discounting hurt satisfaction overall — and how large is the Critical hotspot? | KPI cards (Total, Avg Rating, Avg Discount, Critical, % Critical); category scatter (discount vs rating); slicers: category, price tier |
+| **2 — Discount & Rating Analysis** | Where (by category / price tier) is high discount paired with weaker ratings? | Combo chart (discount + rating by category); slicers: category, price tier |
+| **3 — Threat Zones / Watchlist** | Which review themes are on the relative watchlist, and which are Critical enough to act on first? | Watchlist + Critical cards; watchlist cell table; product detail table; slicers: category, price tier |
+
+Legacy prototype (reference only): `legacy/`.
 
 ---
 
@@ -211,18 +201,14 @@ Expected: **1350** fact rows; threat-zone product count printed in the console. 
 
 Central constants: `python/config.py`
 
-- Paths (`RAW_SALES_PATH`, processed CSVs, `DB_PATH`, `STAR_CSV_PATHS`, NLP output paths)
+- Paths (raw/processed CSVs, `DB_PATH`, NLP / Power BI export paths)
 - `PRICE_TIER_QUANTILES` / `PRICE_TIER_LABELS`
 - `SMALL_CATEGORY_THRESHOLD` (Phase 3 → `Other`)
-- `TOPIC_MIN_PRODUCTS`, `NLP_DOMAIN_STOPWORDS`, `NLP_OUTLIER_XTAB_PATH` (Phase 4)
-- `TOPIC_LABEL_CACHE_PATH`, `TOPIC_LABEL_LLM_MODEL`, `TOPIC_LABEL_TOP_N_TERMS` (topic labeling; key from `.env`)
-- NLP model names (`SENTIMENT_MODEL`, `EMBEDDING_MODEL`, …)
+- `TOPIC_MIN_PRODUCTS`, `CRITICAL_RATING_QUANTILE`, `CRITICAL_DISCOUNT_QUANTILE`, `NLP_DOMAIN_STOPWORDS`
+- `TOPIC_LABEL_CACHE_PATH`, `TOPIC_LABEL_LLM_MODEL`, `TOPIC_LABEL_TOP_N_TERMS`
+- `SENTIMENT_MODEL`, `EMBEDDING_MODEL`, `BERTOPIC_MIN_TOPIC_SIZE`
 
-Shared helpers: `python/utils.py`
-
-- `parse_inr`, `parse_int_commas`
-- `load_products_clean`, `load_star_schema`
-- `collapse_small_categories`, `get_connection`, `validate_star_schema`
+Shared helpers: `python/utils.py` — `parse_inr`, `parse_int_commas`, `load_products_clean`, `load_star_schema`, `collapse_small_categories`, `get_connection`, `validate_star_schema`
 
 ---
 
@@ -233,12 +219,12 @@ Shared helpers: `python/utils.py`
 | Environment | VS Code, Git, Python venv |
 | Data | pandas, openpyxl, DuckDB |
 | Stats | scipy, statsmodels |
-| NLP | transformers, sentence-transformers, BERTopic, scikit-learn, openai (optional labels) |
-| BI | Power BI Desktop |
-| Repro | `requirements.txt`, `config.py`, `utils.py` |
+| NLP | transformers, sentence-transformers, BERTopic, scikit-learn, openai (optional) |
+| BI | Power BI Desktop (`.pbix` in `dashboard/`) |
+| Repro | `requirements.txt`, `config.py`, `utils.py`, `.env.example` |
 
 ---
 
 ## Data note
 
-The Amazon sales spreadsheet is a third-party Kaggle dataset. This repo expects you to download the raw file locally rather than committing it.
+The Amazon sales spreadsheet is a third-party Kaggle dataset. Download it locally; do not commit the raw file.
