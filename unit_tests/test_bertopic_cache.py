@@ -4,7 +4,7 @@ Does NOT modify notebook or production modules — only reads and executes
 the existing Block D cell source against the same data as Phase 4.
 
 Usage (repo root):
-  .\\venv\\Scripts\\python.exe python\\test_bertopic_cache.py
+  .\\venv\\Scripts\\python.exe unit_tests\\test_bertopic_cache.py
 """
 from __future__ import annotations
 

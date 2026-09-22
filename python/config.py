@@ -69,5 +69,5 @@ NLP_DOMAIN_STOPWORDS = frozenset({
     "order", "ordered", "delivery", "review", "reviews", "buy", "bought",
 })
 # Topic labels: OPENAI_API_KEY in repo-root .env (or shell); else top-term concat
-TOPIC_LABEL_LLM_MODEL = "gpt-4o-mini"
+TOPIC_LABEL_LLM_MODEL = "openai/gpt-oss-120b"
 TOPIC_LABEL_TOP_N_TERMS = 5
